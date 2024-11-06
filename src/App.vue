@@ -32,15 +32,15 @@ onMounted(() => {
                 v-model:found-items="foundEvents"
                 v-model:prompt="eventName"
                 :items="events"
-                multiple
                 class="app-main-searcher"
                 placeholder="Введите название экскурсии"
             />
 
             <fuzzy-searcher
-                v-model:found-items="selectedCity"
+                v-model:value="selectedCity"
                 v-model:prompt="cityName"
                 :items="allCites"
+                :item-key="'name'"
                 class="app-main-searcher"
                 with-select
                 placeholder="Выберите город"

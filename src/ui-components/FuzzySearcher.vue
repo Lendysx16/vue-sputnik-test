@@ -3,33 +3,157 @@
     lang="ts"
     generic="T extends { [key: string]: any } | number | string"
 >
-import { ref } from 'vue';
+import SelectSvg from '../assets/SelectArrow.svg';
+import debounce from 'lodash-es/debounce';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 
 type Props = {
     items: T[];
     withSelect?: boolean;
-    multiple?: boolean;
     itemKey?: keyof T;
-    itemValue?: keyof T;
     placeholder?: string;
+    isLoading?: boolean;
 };
 
 const props = defineProps<Props>();
 
-const value = defineModel<T[] | T | null>('foundItems', { default: [] });
+const foundItems = defineModel<T[]>('foundItems', { default: [] });
 const prompt = defineModel<string>('prompt', { default: '' });
+const value = defineModel<T | null>('value', { default: null });
 
 const inputRef = ref<HTMLInputElement>();
+const selectRef = ref<HTMLDivElement>();
+
+const isSelectOpened = ref(false);
+
+const search = debounce(
+    (term: string) => {
+        if (!term) {
+            foundItems.value = props.items;
+            return;
+        }
+
+        foundItems.value = props.items.filter((item) => {
+            const itemValue = props.itemKey
+                ? String(item[props.itemKey])
+                : String(item);
+            return itemValue
+                .toString()
+                .toLowerCase()
+                .includes(term.toLowerCase());
+        });
+
+        value.value = foundItems.value[0] ? foundItems.value[0] : null;
+    },
+    200,
+    {
+        leading: true,
+        trailing: true,
+    }
+);
+
+function handleClickOutside(event: MouseEvent) {
+    if (
+        !(
+            event.target === inputRef.value?.parentElement ||
+            inputRef.value?.parentNode?.contains(event.target as Node) ||
+            selectRef.value?.contains(event.target as Node) ||
+            selectRef.value === event.target
+        )
+    ) {
+        isSelectOpened.value = false;
+    }
+}
+
+function calcPostion() {
+    if (!props.withSelect) {
+        return;
+    }
+
+    const docRect = document.documentElement.getBoundingClientRect();
+    const inputRect = inputRef.value?.parentElement?.getBoundingClientRect();
+
+    if (!inputRect || !selectRef.value) {
+        return;
+    }
+
+    selectRef.value.style.top = `${inputRect.bottom + 5 - docRect.y}px`;
+    selectRef.value.style.left = `${inputRect.left}px`;
+    selectRef.value.style.width = `${inputRect.width}px`;
+}
+
+function handleClick() {
+    inputRef.value?.focus();
+
+    if (!props.withSelect) {
+        return;
+    }
+
+    isSelectOpened.value = true;
+
+    calcPostion();
+}
+
+function onSelectValue(item: T) {
+    value.value = item;
+    prompt.value = props.itemKey ? String(item[props.itemKey]) : String(item);
+    isSelectOpened.value = false;
+    search(prompt.value);
+}
+
+onMounted(() => {
+    window.addEventListener('click', handleClickOutside);
+    window.addEventListener('scroll', calcPostion);
+    window.addEventListener('resize', calcPostion);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('click', handleClickOutside);
+    window.removeEventListener('scroll', calcPostion);
+    window.addEventListener('resize', calcPostion);
+});
+
+watch(
+    () => props.items,
+    () => {
+        search(prompt.value);
+    },
+    { deep: true, immediate: true }
+);
 </script>
 
 <template>
-    <div class="fuzzy-searcher" @click.stop="inputRef?.focus()">
+    <div class="fuzzy-searcher" @click="handleClick()">
         <input
             ref="inputRef"
             v-model="prompt"
             class="fuzzy-searcher-input"
             :placeholder="placeholder"
+            @input="(e) => search((e.target as HTMLInputElement).value)"
         />
+
+        <select-svg v-if="withSelect" class="fuzzy-searcher-select-arrow" />
+
+        <Teleport v-if="withSelect" to="Body">
+            <div
+                v-show="isSelectOpened"
+                ref="selectRef"
+                class="fuzzy-searcher-select"
+            >
+                <div v-if="isLoading" class="fuzzy-searcher-select-item">
+                    Загрузка...
+                </div>
+
+                <div
+                    v-for="(item, index) in foundItems"
+                    :key="itemKey ? String(item[itemKey]) : index"
+                    class="fuzzy-searcher-select-item"
+                    @click="onSelectValue(item)"
+                >
+                    {{ itemKey ? item[itemKey] : item }}
+                </div>
+            </div>
+        </Teleport>
     </div>
 </template>
 
@@ -48,6 +172,7 @@ const inputRef = ref<HTMLInputElement>();
     padding: 0.8rem;
 
     border: 1px solid colors.$border-accent;
+    border-radius: 1px;
 }
 
 .fuzzy-searcher-input {
@@ -58,6 +183,34 @@ const inputRef = ref<HTMLInputElement>();
     &::placeholder {
         font-size: 1rem;
         color: colors.$text-accent;
+    }
+}
+
+.fuzzy-searcher-select-arrow {
+    color: colors.$text-accent;
+    opacity: 0.3;
+}
+
+.fuzzy-searcher-select {
+    position: absolute;
+    z-index: 100;
+
+    overflow-y: auto;
+
+    max-height: 250px;
+
+    background-color: colors.$primary;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 4px 15px 0 #0000001a;
+}
+
+.fuzzy-searcher-select-item {
+    cursor: pointer;
+    padding: 1rem;
+    border-bottom: 1px solid colors.$border-light;
+
+    &:last-child {
+        border-bottom: none;
     }
 }
 </style>
