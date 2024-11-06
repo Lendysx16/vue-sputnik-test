@@ -1,5 +1,6 @@
 import { BASE_URL } from '../consts';
 import { City } from '../types/City';
+import { EventElement } from '../types/EventElement';
 
 export default class SputnikApi {
     private baseUrl: string;
@@ -22,10 +23,12 @@ export default class SputnikApi {
         }
     }
 
-    async getAllEvents() {
+    async getAllEvents(city_id?: number) {
         try {
-            const response = await fetch(`${this.baseUrl}products`);
-            const raw = await response.json();
+            const response = await fetch(
+                `${this.baseUrl}products?${city_id ? `city_id=${city_id}` : ''}`
+            );
+            const raw: EventElement[] = await response.json();
 
             return raw;
         } catch (err: any) {

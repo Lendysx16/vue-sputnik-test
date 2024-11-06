@@ -4,6 +4,7 @@
     generic="T extends { [key: string]: any } | number | string"
 >
 import SelectSvg from '../assets/SelectArrow.svg';
+import Fuse from 'fuse.js';
 import debounce from 'lodash-es/debounce';
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 
@@ -26,6 +27,8 @@ const selectRef = ref<HTMLDivElement>();
 
 const isSelectOpened = ref(false);
 
+const fuse = ref<Fuse<T> | null>(null);
+
 const search = debounce(
     (term: string) => {
         if (!term) {
@@ -33,19 +36,10 @@ const search = debounce(
             return;
         }
 
-        foundItems.value = props.items.filter((item) => {
-            const itemValue = props.itemKey
-                ? String(item[props.itemKey])
-                : String(item);
-            return itemValue
-                .toString()
-                .toLowerCase()
-                .includes(term.toLowerCase());
-        });
-
-        value.value = foundItems.value[0] ? foundItems.value[0] : null;
+        foundItems.value =
+            fuse.value?.search(term).map((item) => item.item) || [];
     },
-    200,
+    500,
     {
         leading: true,
         trailing: true,
@@ -62,6 +56,11 @@ function handleClickOutside(event: MouseEvent) {
         )
     ) {
         isSelectOpened.value = false;
+        prompt.value = value.value
+            ? props.itemKey
+                ? String(value.value[props.itemKey])
+                : String(value.value)
+            : '';
     }
 }
 
@@ -89,36 +88,51 @@ function handleClick() {
         return;
     }
 
-    isSelectOpened.value = true;
-
+    search(prompt.value);
     calcPostion();
+
+    isSelectOpened.value = true;
 }
 
 function onSelectValue(item: T) {
     value.value = item;
     prompt.value = props.itemKey ? String(item[props.itemKey]) : String(item);
     isSelectOpened.value = false;
-    search(prompt.value);
 }
 
 onMounted(() => {
-    window.addEventListener('click', handleClickOutside);
-    window.addEventListener('scroll', calcPostion);
-    window.addEventListener('resize', calcPostion);
+    if (props.withSelect) {
+        window.addEventListener('click', handleClickOutside);
+        window.addEventListener('scroll', calcPostion);
+        window.addEventListener('resize', calcPostion);
+    }
 });
 
 onUnmounted(() => {
-    window.removeEventListener('click', handleClickOutside);
-    window.removeEventListener('scroll', calcPostion);
-    window.addEventListener('resize', calcPostion);
+    if (props.withSelect) {
+        window.removeEventListener('click', handleClickOutside);
+        window.removeEventListener('scroll', calcPostion);
+        window.addEventListener('resize', calcPostion);
+    }
 });
 
 watch(
     () => props.items,
     () => {
+        fuse.value = new Fuse(props.items, {
+            keys: [String(props.itemKey)],
+            threshold: 0.3,
+        });
         search(prompt.value);
     },
     { deep: true, immediate: true }
+);
+
+watch(
+    () => prompt.value,
+    () => {
+        search(prompt.value);
+    }
 );
 </script>
 
@@ -142,6 +156,13 @@ watch(
             >
                 <div v-if="isLoading" class="fuzzy-searcher-select-item">
                     Загрузка...
+                </div>
+
+                <div
+                    v-else-if="!foundItems.length"
+                    class="fuzzy-searcher-select-item"
+                >
+                    Ничего не найдено
                 </div>
 
                 <div

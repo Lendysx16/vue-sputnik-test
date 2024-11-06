@@ -1,5 +1,5 @@
-import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import { defineConfig, loadEnv } from 'vite';
 import eslint from 'vite-plugin-eslint2';
 import svgLoader from 'vite-svg-loader';
 
