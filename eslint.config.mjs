@@ -6,43 +6,43 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default [
-  { files: ['**/*.{js,mjs,cjs,ts,vue}'] },
-  { languageOptions: { globals: globals.browser } },
-  pluginJs.configs.recommended,
+    { files: ['**/*.{js,mjs,cjs,ts,vue}'] },
+    { languageOptions: { globals: globals.browser } },
+    pluginJs.configs.recommended,
 
-  ...tseslint.configs.recommended,
-  ...pluginVue.configs['flat/essential'],
-  {
-    files: ['**/*.vue'],
-    languageOptions: { parserOptions: { parser: tseslint.parser } },
-  },
-  eslintPluginPrettierRecommended,
-  eslintConfigPrettier,
-  {
-    rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          args: 'all',
-          argsIgnorePattern: '^_',
-          caughtErrors: 'all',
-          caughtErrorsIgnorePattern: '^_',
-          destructuredArrayIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          ignoreRestSiblings: true,
+    ...tseslint.configs.recommended,
+    ...pluginVue.configs['flat/recommended'],
+    {
+        files: ['**/*.vue'],
+        languageOptions: { parserOptions: { parser: tseslint.parser } },
+    },
+    eslintPluginPrettierRecommended,
+    eslintConfigPrettier,
+    {
+        rules: {
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    args: 'all',
+                    argsIgnorePattern: '^_',
+                    caughtErrors: 'all',
+                    caughtErrorsIgnorePattern: '^_',
+                    destructuredArrayIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    ignoreRestSiblings: true,
+                },
+            ],
+            'no-console': 1,
+            'vue/multi-word-component-names': 0,
+            '@typescript-eslint/no-explicit-any': 1,
+            quotes: [2, 'single'],
         },
-      ],
-      'no-console': 1,
-      'vue/multi-word-component-names': 0,
-      '@typescript-eslint/no-explicit-any': 1,
-      quotes: [2, 'single'],
-    },
 
-    settings: {
-      'import/resolver': {
-        typescript: true,
-        node: true,
-      },
+        settings: {
+            'import/resolver': {
+                typescript: true,
+                node: true,
+            },
+        },
     },
-  },
 ];
