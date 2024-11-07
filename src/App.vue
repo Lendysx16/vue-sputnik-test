@@ -1,10 +1,20 @@
 <script setup lang="ts">
 import { useSputnikApi } from './api/SputnikApi';
 import SputnikLogo from './assets/SputnikWithName.svg';
+import EventDescription from './components/EventDescription.vue';
 import { City } from './types/City';
 import { EventElement } from './types/EventElement';
 import FuzzySearcher from './ui-components/FuzzySearcher.vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+type Props = {
+    query?: Record<string, string>;
+};
+
+const props = defineProps<Props>();
+
+const router = useRouter();
 
 const sputnikApi = useSputnikApi();
 
@@ -18,12 +28,10 @@ const selectedCity = ref<City | null>(null);
 const citiesAreLoading = ref(false);
 
 const notFound = computed(() => {
-    return (
-        !eventsAreLoading.value &&
-        foundEvents.value.length === 0 &&
-        (eventName.value || selectedCity.value)
-    );
+    return !eventsAreLoading.value && foundEvents.value.length === 0 && (eventName.value || selectedCity.value);
 });
+
+const eventsListRef = ref<HTMLDivElement | null>(null);
 
 function resetFilter() {
     eventName.value = '';
@@ -31,31 +39,54 @@ function resetFilter() {
     foundEvents.value = events.value;
 }
 
-onMounted(() => {
-    citiesAreLoading.value = true;
-    eventsAreLoading.value = true;
-
-    sputnikApi
-        .getAllEvents()
-        .then((data) => (events.value = data))
-        .finally(() => (eventsAreLoading.value = false));
-
-    sputnikApi
-        .getAllCities()
-        .then((data) => (allCites.value = data))
-        .finally(() => (citiesAreLoading.value = false));
-});
-
 watch(
     () => selectedCity.value,
     (newValue) => {
+        if (selectedCity.value === null) {
+            return;
+        }
+
         eventsAreLoading.value = true;
+
+        router.push({ query: { city_id: String(newValue?.id) } });
 
         sputnikApi
             .getAllEvents(newValue?.id)
             .then((data) => (events.value = data))
             .finally(() => (eventsAreLoading.value = false));
     }
+);
+
+watch(
+    () => eventName.value.length,
+    () => {
+        if (eventsListRef.value) {
+            eventsListRef.value.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+);
+
+watch(
+    () => props.query,
+    () => {
+        citiesAreLoading.value = true;
+
+        sputnikApi.getAllCities().then((data) => {
+            allCites.value = data;
+            citiesAreLoading.value = false;
+
+            if (props.query?.['city_id']) {
+                const city_id = Number(props.query?.['city_id']);
+
+                if (city_id === selectedCity.value?.id) {
+                    return;
+                }
+
+                selectedCity.value = allCites.value.find((city) => city.id === city_id) || null;
+            }
+        });
+    },
+    { immediate: true }
 );
 </script>
 
@@ -89,9 +120,15 @@ watch(
 
         <div v-if="notFound" class="app-main-not-found">
             <p>Поиск не дал результатов</p>
-            <button class="app-main-reset-btn" @click="resetFilter">
-                Сбросить фильтры
-            </button>
+            <button class="app-main-reset-btn" @click="resetFilter">Сбросить фильтры</button>
+        </div>
+
+        <div v-if="eventsAreLoading" class="app-main-not-found">
+            <p>Загрузка...</p>
+        </div>
+
+        <div v-else-if="selectedCity?.id || eventName" ref="eventsListRef" class="app-main-events">
+            <event-description v-for="event in foundEvents" :key="event.id" :event="event" />
         </div>
     </div>
 </template>
@@ -146,9 +183,36 @@ watch(
 .app-main-searchers {
     display: flex;
     gap: 1.5rem;
+
+    @media screen and (width < 1000px) {
+        flex-direction: column;
+    }
 }
 
 .app-main-searcher {
     width: 300px;
+}
+
+.app-main-events {
+    overflow-y: auto;
+    height: 60svh;
+    margin-top: 90px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+
+    @media screen and (width > 2000px) {
+        grid-template-columns: repeat(5, minmax(300px, 1fr));
+        height: 70svh;
+    }
+
+    @media screen and (width < 1200px) {
+        grid-template-columns: repeat(2, minmax(300px, 1fr));
+    }
+
+    @media screen and (width < 800px) {
+        grid-template-columns: repeat(1, minmax(300px, 1fr));
+    }
 }
 </style>

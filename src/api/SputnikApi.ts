@@ -25,9 +25,7 @@ export default class SputnikApi {
 
     async getAllEvents(city_id?: number) {
         try {
-            const response = await fetch(
-                `${this.baseUrl}products?${city_id ? `city_id=${city_id}` : ''}`
-            );
+            const response = await fetch(`${this.baseUrl}products?${city_id ? `city_id=${city_id}` : ''}`);
             const raw: EventElement[] = await response.json();
 
             return raw;

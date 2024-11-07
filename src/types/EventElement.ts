@@ -3,7 +3,7 @@ export interface EventElement {
     id: number;
     price: string;
     customers_review_rating: number;
-    cover_phote: {
+    cover_photo: {
         big: string;
     };
     reviews: number;

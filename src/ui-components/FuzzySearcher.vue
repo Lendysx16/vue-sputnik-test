@@ -1,8 +1,4 @@
-<script
-    setup
-    lang="ts"
-    generic="T extends { [key: string]: any } | number | string"
->
+<script setup lang="ts" generic="T extends { [key: string]: any } | number | string">
 import SelectSvg from '../assets/SelectArrow.svg';
 import Fuse from 'fuse.js';
 import debounce from 'lodash-es/debounce';
@@ -13,7 +9,6 @@ type Props = {
     withSelect?: boolean;
     itemKey?: keyof T;
     placeholder?: string;
-    isLoading?: boolean;
 };
 
 const props = defineProps<Props>();
@@ -21,6 +16,7 @@ const props = defineProps<Props>();
 const foundItems = defineModel<T[]>('foundItems', { default: [] });
 const prompt = defineModel<string>('prompt', { default: '' });
 const value = defineModel<T | null>('value', { default: null });
+const isLoading = defineModel<boolean>('isLoading', { default: false });
 
 const inputRef = ref<HTMLInputElement>();
 const selectRef = ref<HTMLDivElement>();
@@ -29,15 +25,11 @@ const isSelectOpened = ref(false);
 
 const fuse = ref<Fuse<T> | null>(null);
 
-const search = debounce(
+const searchFunc = debounce(
     (term: string) => {
-        if (!term) {
-            foundItems.value = props.items;
-            return;
-        }
+        foundItems.value = fuse.value?.search(term).map((item) => item.item) || [];
 
-        foundItems.value =
-            fuse.value?.search(term).map((item) => item.item) || [];
+        isLoading.value = false;
     },
     500,
     {
@@ -45,6 +37,17 @@ const search = debounce(
         trailing: true,
     }
 );
+
+function search(term: string) {
+    if (!term) {
+        foundItems.value = props.items;
+        return;
+    }
+
+    isLoading.value = true;
+
+    searchFunc(term);
+}
 
 function handleClickOutside(event: MouseEvent) {
     if (
@@ -56,11 +59,12 @@ function handleClickOutside(event: MouseEvent) {
         )
     ) {
         isSelectOpened.value = false;
-        prompt.value = value.value
-            ? props.itemKey
-                ? String(value.value[props.itemKey])
-                : String(value.value)
-            : '';
+        if (prompt.value.length === 0) {
+            value.value = null;
+            return;
+        }
+
+        prompt.value = value.value ? (props.itemKey ? String(value.value[props.itemKey]) : String(value.value)) : '';
     }
 }
 
@@ -131,7 +135,18 @@ watch(
 watch(
     () => prompt.value,
     () => {
-        search(prompt.value);
+        if (!isLoading.value) {
+            search(prompt.value);
+        }
+    }
+);
+
+watch(
+    () => value.value,
+    () => {
+        if (value.value) {
+            prompt.value = props.itemKey ? String(value.value[props.itemKey]) : String(value.value);
+        }
     }
 );
 </script>
@@ -149,24 +164,14 @@ watch(
         <select-svg v-if="withSelect" class="fuzzy-searcher-select-arrow" />
 
         <Teleport v-if="withSelect" to="Body">
-            <div
-                v-show="isSelectOpened"
-                ref="selectRef"
-                class="fuzzy-searcher-select"
-            >
-                <div v-if="isLoading" class="fuzzy-searcher-select-item">
-                    Загрузка...
-                </div>
+            <div v-show="isSelectOpened" ref="selectRef" class="fuzzy-searcher-select">
+                <div v-if="isLoading" class="fuzzy-searcher-select-item">Загрузка...</div>
 
-                <div
-                    v-else-if="!foundItems.length"
-                    class="fuzzy-searcher-select-item"
-                >
-                    Ничего не найдено
-                </div>
+                <div v-else-if="!foundItems.length" class="fuzzy-searcher-select-item">Ничего не найдено</div>
 
                 <div
                     v-for="(item, index) in foundItems"
+                    v-else
                     :key="itemKey ? String(item[itemKey]) : index"
                     class="fuzzy-searcher-select-item"
                     @click="onSelectValue(item)"
