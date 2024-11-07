@@ -147,6 +147,10 @@ watch(
 .app-main-header {
     margin: 50px 0;
     text-align: center;
+
+    @media screen and (width < 1000px) {
+        margin: 20px 0;
+    }
 }
 
 .app-main-header-text {
@@ -214,6 +218,7 @@ watch(
 
     @media screen and (width < 800px) {
         grid-template-columns: repeat(1, minmax(300px, 1fr));
+        margin-top: 20px;
     }
 }
 </style>
