@@ -148,7 +148,7 @@ watch(
     margin: 50px 0;
     text-align: center;
 
-    @media screen and (width < 1000px) {
+    @media screen and (width < 800px) {
         margin: 20px 0;
     }
 }
@@ -189,7 +189,7 @@ watch(
     display: flex;
     gap: 1.5rem;
 
-    @media screen and (width < 1000px) {
+    @media screen and (width < 800px) {
         flex-direction: column;
     }
 }
@@ -200,11 +200,12 @@ watch(
 
 .app-main-events {
     overflow-y: auto;
-    height: 60svh;
-    margin-top: 90px;
     display: grid;
     grid-template-columns: repeat(3, minmax(300px, 1fr));
     gap: 1.5rem;
+
+    height: 60svh;
+    margin-top: 90px;
     margin-bottom: 1rem;
 
     @media screen and (width > 2000px) {
@@ -218,6 +219,8 @@ watch(
 
     @media screen and (width < 800px) {
         grid-template-columns: repeat(1, minmax(300px, 1fr));
+        height: unset;
+        overflow: visible;
         margin-top: 20px;
     }
 }

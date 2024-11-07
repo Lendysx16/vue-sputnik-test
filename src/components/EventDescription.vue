@@ -35,7 +35,7 @@ defineProps<Props>();
 </template>
 
 <style lang="scss">
-@use '../styles/colors.scss';
+@use '../styles/colors';
 
 .event-description {
     display: flex;
@@ -44,6 +44,11 @@ defineProps<Props>();
     align-items: flex-start;
 
     max-width: 345px;
+
+    @media screen and (width < 800px) {
+        max-width: 245px;
+        margin: auto;
+    }
 }
 
 .event-description-photo {
@@ -51,6 +56,10 @@ defineProps<Props>();
     height: 200px;
     object-fit: cover;
     border-radius: 5px;
+
+    @media screen and (width < 800px) {
+        height: 150px;
+    }
 }
 
 .event-description-ratiing {
@@ -75,14 +84,15 @@ defineProps<Props>();
     display: flex;
     flex-direction: column;
 }
+
 .event-description-price-rub {
-    font-weight: bold;
     font-size: 1.5rem;
+    font-weight: bold;
     line-height: 32px;
 }
 
 .event-description-price-text {
-    color: colors.$text-accent;
     font-size: 0.75rem;
+    color: colors.$text-accent;
 }
 </style>

@@ -10,6 +10,10 @@
     color: colors.$text;
 
     background-color: colors.$primary;
+
+    @media screen and (width <= 800px) {
+        font-size: 14px;
+    }
 }
 
 html,

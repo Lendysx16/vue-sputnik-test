@@ -160,7 +160,7 @@ watch(
             ref="inputRef"
             v-model="prompt"
             :disabled="disabled"
-            :class="{ 'fuzzy-searcher-input': true, 'fuzzy-searcher-input--disabled': disabled }"
+            :class="{ 'fuzzy-searcher-input': true, 'fuzzy-searcher-input-disabled': disabled }"
             :placeholder="placeholder"
             @input="(e) => search((e.target as HTMLInputElement).value)"
         />
@@ -216,7 +216,7 @@ watch(
     }
 }
 
-.fuzzy-searcher:has(.fuzzy-searcher-input--disabled) {
+.fuzzy-searcher:has(.fuzzy-searcher-input-disabled) {
     cursor: default;
 }
 
