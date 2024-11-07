@@ -50,7 +50,7 @@ function search(term: string) {
     searchFunc(term);
 }
 
-function handleClickOutside(event: MouseEvent) {
+function handleClickOutside(event: MouseEvent | TouchEvent) {
     if (
         !(
             event.target === inputRef.value?.parentElement ||
@@ -108,6 +108,7 @@ function onSelectValue(item: T) {
 onMounted(() => {
     if (props.withSelect) {
         window.addEventListener('click', handleClickOutside);
+        window.addEventListener('touchstart', handleClickOutside);
         window.addEventListener('scroll', calcPostion);
         window.addEventListener('resize', calcPostion);
     }
@@ -116,8 +117,9 @@ onMounted(() => {
 onUnmounted(() => {
     if (props.withSelect) {
         window.removeEventListener('click', handleClickOutside);
+        window.removeEventListener('touchstart', handleClickOutside);
         window.removeEventListener('scroll', calcPostion);
-        window.addEventListener('resize', calcPostion);
+        window.removeEventListener('resize', calcPostion);
     }
 });
 
