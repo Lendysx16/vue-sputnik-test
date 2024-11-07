@@ -8,6 +8,7 @@ type Props = {
     items: T[];
     withSelect?: boolean;
     itemKey?: keyof T;
+    disabled?: boolean;
     placeholder?: string;
 };
 
@@ -156,7 +157,8 @@ watch(
         <input
             ref="inputRef"
             v-model="prompt"
-            class="fuzzy-searcher-input"
+            :disabled="disabled"
+            :class="{ 'fuzzy-searcher-input': true, 'fuzzy-searcher-input--disabled': disabled }"
             :placeholder="placeholder"
             @input="(e) => search((e.target as HTMLInputElement).value)"
         />
@@ -210,6 +212,10 @@ watch(
         font-size: 1rem;
         color: colors.$text-accent;
     }
+}
+
+.fuzzy-searcher:has(.fuzzy-searcher-input--disabled) {
+    cursor: default;
 }
 
 .fuzzy-searcher-select-arrow {

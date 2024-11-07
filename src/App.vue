@@ -43,6 +43,7 @@ watch(
     () => selectedCity.value,
     (newValue) => {
         if (selectedCity.value === null) {
+            router.push('/');
             return;
         }
 
@@ -68,23 +69,22 @@ watch(
 
 watch(
     () => props.query,
-    () => {
-        citiesAreLoading.value = true;
-
-        sputnikApi.getAllCities().then((data) => {
-            allCites.value = data;
+    async () => {
+        if (!allCites.value.length) {
+            citiesAreLoading.value = true;
+            allCites.value = await sputnikApi.getAllCities();
             citiesAreLoading.value = false;
+        }
 
-            if (props.query?.['city_id']) {
-                const city_id = Number(props.query?.['city_id']);
+        if (props.query?.['city_id']) {
+            const city_id = Number(props.query?.['city_id']);
 
-                if (city_id === selectedCity.value?.id) {
-                    return;
-                }
-
-                selectedCity.value = allCites.value.find((city) => city.id === city_id) || null;
+            if (city_id === selectedCity.value?.id) {
+                return;
             }
-        });
+
+            selectedCity.value = allCites.value.find((city) => city.id === city_id) || null;
+        }
     },
     { immediate: true }
 );
@@ -103,6 +103,7 @@ watch(
                 v-model:prompt="eventName"
                 :items="events"
                 :item-key="'title'"
+                :disabled="!selectedCity?.id"
                 class="app-main-searcher"
                 placeholder="Введите название экскурсии"
             />
@@ -114,7 +115,7 @@ watch(
                 :item-key="'name'"
                 class="app-main-searcher"
                 with-select
-                placeholder="Выберите город"
+                :placeholder="citiesAreLoading ? 'Загрузка городов...' : 'Выберите город'"
             />
         </div>
 
@@ -127,7 +128,7 @@ watch(
             <p>Загрузка...</p>
         </div>
 
-        <div v-else-if="selectedCity?.id || eventName" ref="eventsListRef" class="app-main-events">
+        <div v-else-if="selectedCity?.id" ref="eventsListRef" class="app-main-events">
             <event-description v-for="event in foundEvents" :key="event.id" :event="event" />
         </div>
     </div>
